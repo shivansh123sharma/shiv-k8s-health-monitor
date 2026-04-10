@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: k8s-health-monitor
+  namespace: default
+spec:
+  schedule: "*/10 * * * *" # Runs every 10 minutes
+  concurrencyPolicy: Forbid   # Prevents a new job from starting if the old one is still running
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: health-monitor-sa # Ensure this SA has 'list pods' permissions
+          containers:
+          - name: health-monitor
+            image: shivansh123sharma/k8s-health-monitor:latest # Use the image you built with your script
+            imagePullPolicy: Always
+            env:
+              - name: EMAIL_FROM
+                valueFrom:
+                  secretKeyrRef:
+                    name: email-secret
+                    key: EMAIL_FROM
+              - name: EMAIL_TO
+                valueFrom:
+                  secretKeyRef:
+                    name: email-secret
+                    key: EMAIL_TO
+              - name: EMAIL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: email-secret
+                    key: EMAIL-PASSWORD
+          restartPolicy: OnFailure
